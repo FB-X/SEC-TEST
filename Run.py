@@ -89,19 +89,17 @@ def copy_all():
         print(f"    [ok] {name}")
 
 
-def copy_FBXXX_so():
-    step("Copying FBXXX.so into alireq package")
-    src = os.path.join(HERE, FBXXX_SO)
-    dst = os.path.join(ALIREQ_DIR, FBXXX_SO)
-    s_src, s_dst = copy_file(src, dst)
-    if s_src != s_dst:
-        fail("FBXXX.so hash mismatch after copy")
+def check_FBXXX_so():
+    step("Checking FBXXX.so in repo root")
+    path = os.path.join(HERE, FBXXX_SO)
+    if not os.path.isfile(path):
+        fail(f"FBXXX.so not found at {path}")
     print(f"    [ok] {FBXXX_SO}")
 
 
 def verify_layout():
     step("Verifying installed layout")
-    expected = SO_FILES + EXTRA_FILES + [FBXXX_SO]
+    expected = SO_FILES + EXTRA_FILES
     missing = []
     for name in expected:
         p = os.path.join(ALIREQ_DIR, name)
@@ -114,6 +112,12 @@ def verify_layout():
         dst = os.path.join(ALIREQ_DIR, name)
         if sha256_of(src) != sha256_of(dst):
             fail(f"Hash mismatch for {name}")
+    extra = []
+    for name in os.listdir(ALIREQ_DIR):
+        if name not in expected:
+            extra.append(name)
+    if extra:
+        fail(f"Unexpected files in alireq package: {extra}")
     print("    [ok] all files present and hashes match")
 
 
@@ -171,8 +175,8 @@ def check_ld_library_path():
 
 
 def load_FBXXX():
-    step("Loading FBXXX.so")
-    path = os.path.join(ALIREQ_DIR, FBXXX_SO)
+    step("Loading FBXXX.so from repo root")
+    path = os.path.join(HERE, FBXXX_SO)
     if not os.path.isfile(path):
         fail(f"FBXXX.so not found at {path}")
     spec = importlib.util.spec_from_file_location("FBXXX", path)
@@ -198,7 +202,7 @@ def main():
     remove_old_alireq()
     make_alireq_dir()
     copy_all()
-    copy_FBXXX_so()
+    check_FBXXX_so()
     verify_layout()
     add_alireq_to_path()
     check_ld_library_path()

@@ -1,0 +1,12 @@
+AliReq Hybrid v2.0 — Client Package
+
+INSTALLATION:
+  $ cp -r /sdcard/ALI_CLIENT $HOME/ALI_CLIENT
+  $ cd $HOME/ALI_CLIENT
+  $ python3 Run.py
+
+WHY NOT /sdcard?
+  Android 10+ = noexec. .so files only load from $HOME.
+
+TROUBLESHOOTING:
+  "dlopen failed ... not accessible for namespace" → moved to $HOME?

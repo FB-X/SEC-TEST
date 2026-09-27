@@ -4,12 +4,10 @@ import shutil
 import hashlib
 import importlib.util
 import subprocess
-
 TERMUX_PREFIX = os.environ.get("PREFIX", "/data/data/com.termux/files/usr")
 PYVER = f"python{sys.version_info.major}.{sys.version_info.minor}"
 SITE_PACKAGES = f"{TERMUX_PREFIX}/lib/{PYVER}/site-packages"
 ALIREQ_DIR = f"{SITE_PACKAGES}/alireq"
-
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO_REQUESTS = os.path.join(HERE, "requests")
 
@@ -21,6 +19,12 @@ SO_FILES = [
     "libandroid_shield.so",
     "models.cpython-314-aarch64-linux-android.so",
     "sessions.cpython-314-aarch64-linux-android.so",
+    "rust_bridge.cpython-314-aarch64-linux-android.so",   # ← NEW (compiled)
+]
+
+NATIVE_FILES = [
+    "libalireq_engine.so",
+    "libandroid_shield.so",
 ]
 
 EXTRA_FILES = [
@@ -79,8 +83,9 @@ def copy_file(src, dst):
 
 
 def copy_all():
-    step("Copying .so files and __init__.py into alireq package")
-    for name in SO_FILES + EXTRA_FILES:
+    step("Copying .so + native + __init__.py into alireq package")
+    all_files = SO_FILES + NATIVE_FILES + EXTRA_FILES
+    for name in all_files:
         src = os.path.join(REPO_REQUESTS, name)
         dst = os.path.join(ALIREQ_DIR, name)
         s_src, s_dst = copy_file(src, dst)
@@ -99,7 +104,7 @@ def check_FBXXX_so():
 
 def verify_layout():
     step("Verifying installed layout")
-    expected = SO_FILES + EXTRA_FILES
+    expected = set(SO_FILES + NATIVE_FILES + EXTRA_FILES)
     missing = []
     for name in expected:
         p = os.path.join(ALIREQ_DIR, name)
@@ -107,11 +112,13 @@ def verify_layout():
             missing.append(name)
     if missing:
         fail(f"Missing after install: {missing}")
-    for name in SO_FILES:
+
+    for name in SO_FILES + NATIVE_FILES:
         src = os.path.join(REPO_REQUESTS, name)
         dst = os.path.join(ALIREQ_DIR, name)
         if sha256_of(src) != sha256_of(dst):
             fail(f"Hash mismatch for {name}")
+
     extra = []
     for name in os.listdir(ALIREQ_DIR):
         if name not in expected:
@@ -195,7 +202,7 @@ def load_FBXXX():
 
 
 def main():
-    print("[*] AliReq client runner")
+    print("[*] AliReq Hybrid v2.0 — client runner")
     print(f"[*] HOME = {HERE}")
     print(f"[*] TARGET = {ALIREQ_DIR}")
 
